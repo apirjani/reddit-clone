@@ -1,6 +1,5 @@
 import { Timestamp } from "firebase/firestore";
 import { atom } from "recoil";
-import { Tracing } from "trace_events";
 
 export type Post = {
   id?: string;
@@ -16,15 +15,23 @@ export type Post = {
   createdAt: Timestamp;
 };
 
+export type PostVote = {
+  id: string;
+  postId: string;
+  communityId: string;
+  voteValue: number;
+};
+
 interface PostState {
   selectedPost: Post | null;
   posts: Post[];
-  //postVotes:
+  postVotes: PostVote[];
 }
 
 const defaultPostState: PostState = {
   selectedPost: null,
   posts: [],
+  postVotes: [],
 };
 
 export const postState = atom<PostState>({

@@ -1,7 +1,8 @@
 import { Community } from "@/src/atoms/communitiesAtom";
 import { Post } from "@/src/atoms/postsAtom";
-import { firestore } from "@/src/firebase/clientApp";
+import { auth, firestore } from "@/src/firebase/clientApp";
 import usePosts from "@/src/hooks/usePosts";
+import { Stack } from "@chakra-ui/react";
 import {
   collection,
   doc,
@@ -13,6 +14,9 @@ import {
 import React from "react";
 import { useState } from "react";
 import { useEffect } from "react";
+import { useAuthState } from "react-firebase-hooks/auth";
+import PostItem from "./PostItem";
+import PostLoader from "./PostLoader";
 
 type PostsProps = {
   communityData: Community;
@@ -21,10 +25,18 @@ type PostsProps = {
 const Posts: React.FC<PostsProps> = ({ communityData }) => {
   //useAuthState
   const [loading, setLoading] = useState(false);
-  const { postStateValue, setPostStateValue } = usePosts();
+  const {
+    postStateValue,
+    setPostStateValue,
+    onVote,
+    onSelectPost,
+    onDeletePost,
+  } = usePosts();
+  const [user] = useAuthState(auth);
 
   const getPosts = async () => {
     try {
+      setLoading(true);
       // get posts for this community
       const postQuery = query(
         collection(firestore, "posts"),
@@ -44,12 +56,36 @@ const Posts: React.FC<PostsProps> = ({ communityData }) => {
     } catch (error: any) {
       console.log("getPosts error", error.message);
     }
+    setLoading(false);
   };
 
   useEffect(() => {
     getPosts();
   }, []);
 
-  return <div>Posts</div>;
+  return (
+    <>
+      {loading ? (
+        <PostLoader />
+      ) : (
+        <Stack>
+          {postStateValue.posts.map((post) => (
+            <PostItem
+              key={post.id}
+              post={post}
+              userIsCreator={user?.uid === post.creatorId}
+              userVoteValue={
+                postStateValue.postVotes.find((item) => item.postId === post.id)
+                  ?.voteValue
+              }
+              onVote={onVote}
+              onDeletePost={onDeletePost}
+              onSelectPost={onSelectPost}
+            />
+          ))}
+        </Stack>
+      )}
+    </>
+  );
 };
 export default Posts;
